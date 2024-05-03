@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _WIN32
+#include <windows.h> // Ðoi voi Windows
+#else
+#include <unistd.h> // Ðoi voi Unix/Linux
+#endif
+
 #define MAX_ACCOUNTS 100
 #define MAX_LOGIN_ATTEMPTS 5
 #define MAX_TRANSACTIONS 10 // Gi?i h?n s? l?n giao d?ch
@@ -34,39 +40,25 @@ Transaction transactions[MAX_TRANSACTIONS];
 int num_transactions = 0;
 int numAccounts = 0;
 
+
+void waitForClear();
 void enterPassword(char *password);
-int checkPassword(Account *accounts);
+int checkPassword_admin();
 int check_password(Account *accounts);
 void readAccountFile(Account *accounts, int *numAccounts);
 void writeAccountFile(Account *accounts, int numAccounts);
-void performTransaction(Account *accounts, int numAccounts);
-void deposit(Account *accounts, int numAccounts);
-void withdraw(Account *accounts, int numAccounts);
-void checkBalance(Account *accounts, int numAccounts);
+void performTransaction(Account *accounts, int numAccounts,int *reloadUser);
+void deposit(Account *accounts, int numAccounts,int *reloadUser);
+void withdraw(Account *accounts, int numAccounts,int *reloadUser);
+void checkBalance(Account *accounts, int numAccounts,int *reloadUser);
 void showMenuAndProcessChoice(Account *accounts, int numAccounts);
-void logTransaction(char *username, char *action, float amount);
-
-void save_transactions(const char *filename) {
-    FILE *file = fopen(filename, "w");
-    if (file == NULL) {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
-    }
-
-    int i;
-    for (i = 0; i < num_transactions; i++) {
-        fprintf(file, "%d %.2f\n", transactions[i].account_number, transactions[i].amount);
-    }
-
-    fclose(file);
-}
+void save_transactions(const char *filename);
 
 int main() {
     Account accounts[MAX_ACCOUNTS];
 	
     // Nh?p m?t kh?u t? nhân viên IT ð? kh?i ð?ng máy ATM
-    printf("Nhap mat khau de khoi dong may\n");
-	check_password(accounts);
+	checkPassword_admin();
     // Doc file
     readAccountFile(accounts, &numAccounts);
 
@@ -76,6 +68,16 @@ int main() {
   
 	save_transactions("transaction_history.dat");
     return 0;
+}
+
+//Ham cho xoa man hinh
+void waitForClear(){
+    #ifdef _WIN32
+	Sleep(1500); // Trên Windows, th?i gian du?c tính b?ng mili-giây (ms)
+	#else
+	sleep(1.5); // Trên Unix/Linux, th?i gian du?c tính b?ng giây
+	#endif
+    system("cls");
 }
 
 void enterAccount(){
@@ -88,12 +90,24 @@ void enterPassword() {
     scanf("%s", &password);
 }
 
-//int checkPassword(char *password) {
-//    // Trong th?c t?, b?n c?n ki?m tra m?t kh?u này v?i m?t kh?u ðý?c lýu tr? trong cõ s? d? li?u ho?c t?p tin.
-//    // Trong ví d? này, m?t kh?u ðý?c xác ð?nh là "admin"
-//    char correctPassword[] = "admin";
-//    return strcmp(password, correctPassword) == 0;
-//}
+
+
+int checkPassword_admin() {
+    //Ham xac nhan admin
+    printf("Nhap mat khau de khoi dong may\n");
+	enterPassword();
+    
+    while(strcmp(password, password_ad)){
+    	system("cls");
+    	printf("MAT KHAU NHAP VAO SAI!!!\n Vui long nhap lai\n\n\n");
+    	waitForClear();
+		enterPassword();
+	}
+	++start;
+	system("cls");
+	printf("Dang khoi dong");
+	waitForClear();
+}
 
 void readAccountFile(Account *accounts, int *numAccounts) {
     FILE *file = fopen("accounts.dat", "r");
@@ -122,63 +136,158 @@ void writeAccountFile(Account *accounts, int numAccounts) {
 
 // Hàm de kiem tra mat khau
 int check_password(Account *accounts) {
+	printf("***     ---     Chao mung ban     ---     ***\n\n\nVui long xac nhan thong tin tai khoan\n\n");
 	enterAccount();
-	enterPassword();
-	if (strcmp(username,account_ad ) == 0 ){
-		if (strcmp(password, password_ad) == 0){
-			++start;
-//			printf("\nnow %d\n",start);
-			return 0;
-		}
+	if (strcmp(username, password_ad) == 0){
+		++start;
+		return 0;
 	}
+//	enterPassword();
 	int i;
     for (i = 0; i < numAccounts; i++) {
     	if (strcmp(username,accounts[i].username ) == 0 )
-            if(strcmp(accounts[i].password, password) == 0)
-            	{
+            {
+            	return 1;
+//            	if(strcmp(accounts[i].password, password) == 0)
+//            	{
 //            		printf("yeh");
-	            	return 1;
-	            	break;
-				}
-				else{
-					("Sai ma PIN");
-					return 0;
-				}
+//	            	return 1;
+//				}
+//				else{
+////					"Sai ma PIN!!!\nMoi nhap lai\n";
+//					return 0;
+//				}
+			}
         
     }
+//    printf("Sai so tai khoan!!!\nMoi nhap lai\n");
+    return 0;
 }
 
-void performTransaction(Account *accounts, int numAccounts) {
+//Ham show menu
+void showMenuAndProcessChoice(Account *accounts, int numAccounts) {
+	int *reloadUser;
+	*reloadUser = 1; 
+    int choice;
+    int i=check_password(accounts);
+    if(start==2) return;
+    while(!i){
+    	system("cls");
+    	printf("THONG TIN TAI KHOAN SAI!!!\nVui long nhap lai");
+    	waitForClear();
+    	i=check_password(accounts);
+    	if(start==2) return;
+	}
+	
+    do {
+        printf("\nATM Menu:\n");
+        printf("1. Perform Transaction\n");
+        printf("0. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch(choice) {
+            case 1:
+            	system("cls");
+                performTransaction(accounts, numAccounts,reloadUser);
+                break;
+            case 0:
+                system("cls");
+                printf("Exiting...\n");
+                waitForClear();
+                void waitForClear();
+                break;
+            default:
+                printf("\n\nInvalid choice. Please try again.\n\n");
+        }
+    } while(choice != 0);
+}
+
+void performTransaction(Account *accounts, int numAccounts,int *reloadUser) {
     int choice;
     printf("\nTransaction Menu:\n");
     printf("1. Withdraw\n");
     printf("2. Deposit\n");
     printf("3. Check Balance\n");
-    printf("4. Back to Main Menu\n");
+    printf("0. Back to Main Menu\n");
     printf("Enter your choice: ");
     scanf("%d", &choice);
 
     switch(choice) {
         case 1:
-            withdraw(accounts, numAccounts);
+        	system("cls");
+            withdraw(accounts, numAccounts,reloadUser);
             break;
         case 2:
-            deposit(accounts, numAccounts);
+        	system("cls");
+            deposit(accounts, numAccounts,reloadUser);
             break;
         case 3:
-            checkBalance(accounts, numAccounts);
+        	system("cls");
+            checkBalance(accounts, numAccounts, reloadUser);
             break;
-        case 4:
+        case 0:
+        	system("cls");
             printf("Returning to Main Menu...\n");
+            waitForClear();
             return;
         default:
             printf("Invalid choice. Please try again.\n");
     }
 }
 
-void deposit(Account *accounts, int numAccounts) {
+void deposit(Account *accounts, int numAccounts, int *reloadUser) {
     float amount;
-    int loggedIn = 0;
+
+//    for (int i = 0; i < numAccounts; i++) {
+//    if (strcmp(username, accounts[i].username) == 0) {
+//        if (accounts[i].isLocked) {
+//            printf("This account is locked. Please contact customer support.\n");
+//            return;
+//        }
+//        
+//        int attempt = 0; // Bi?n ð?m s? l?n nh?p m?t kh?u sai
+//        while (attempt < MAX_LOGIN_ATTEMPTS) {
+//            printf("Enter password: ");
+//            scanf("%s", password);
+//
+//            // Ki?m tra m?t kh?u
+//            if (strcmp(password, accounts[i].password) == 0) {
+//                // N?u m?t kh?u ðúng, ðãng nh?p thành công và th?c hi?n giao d?ch
+//                printf("Logged in successfully.\n");
+//                printf("Your balance: %.2f\n", accounts[i].balance);
+//                printf("Enter amount to deposit: ");
+//                scanf("%f", &amount);
+//                
+//                if (amount > 0) {
+//                    accounts[i].balance += amount;
+//                    printf("Deposit successful. New balance: %.2f\n", accounts[i].balance);
+//                    writeAccountFile(accounts, numAccounts);
+//                    // Ghi l?ch s? giao d?ch
+//                    strcpy(transactions[num_transactions].account_number, accounts[i].username);
+//                    strcpy(transactions[num_transactions].type, "Deposit");
+//                    transactions[num_transactions].amount = amount;
+//                    num_transactions++; 
+//                } else {
+//                    printf("Invalid amount.\n");
+//                }
+//                return; // Thoát kh?i hàm sau khi th?c hi?n giao d?ch
+//            } else {
+//                // N?u m?t kh?u không ðúng, tãng s? l?n nh?p sai và hi?n th? thông báo
+//                printf("Incorrect password.\n");
+//                attempt++;
+//                printf("Attempts remaining: %d\n", MAX_LOGIN_ATTEMPTS - attempt);
+//            }
+//        }
+//
+//        // N?u s? l?n nh?p sai vý?t quá MAX_LOGIN_ATTEMPTS, khoá tài kho?n
+//        accounts[i].isLocked = 1;
+//        printf("Too many incorrect login attempts. This account is now locked.\n");
+//        writeAccountFile(accounts, numAccounts);
+//        return;
+//    }
+//}
+
     
     for (int i = 0; i < numAccounts; i++) {
         if (strcmp(username, accounts[i].username) == 0) {
@@ -186,161 +295,172 @@ void deposit(Account *accounts, int numAccounts) {
                 printf("This account is locked. Please contact customer support.\n");
                 return;
             }
-            printf("Enter password: ");
-            scanf("%s", password);
-
-            if (strcmp(password, accounts[i].password) == 0) {
-                loggedIn = 1;
-                accounts[i].loginAttempts = 0; // Reset so lan dang nhap sai
-                printf("Logged in successfully.\n");
-                printf("Your balance: %.2f\n", accounts[i].balance);
-                printf("Enter amount to deposit: ");
-                scanf("%f", &amount);
-                if (amount > 0) {
-                    accounts[i].balance += amount;
-                    printf("Deposit successful. New balance: %.2f\n", accounts[i].balance);
-                    writeAccountFile(accounts, numAccounts);
-                    // Ghi lich su giao dich
-                    strcpy(transactions[num_transactions].account_number, accounts[i].username);
-					strcpy(transactions[num_transactions].type, "Deposit");
-				    transactions[num_transactions].amount = amount;
-				    num_transactions++;	
-                } else {
-                    printf("Invalid amount.\n");
-                }
-                break;
-            } else {
-                printf("Incorrect password.\n");
+            if(*reloadUser){
+            	printf("Enter password: ");
+            	scanf("%s", password);
+			}
+			while(strcmp(password, accounts[i].password)){
+				printf("Incorrect password.\n");
                 accounts[i].loginAttempts++;
                 if (accounts[i].loginAttempts >= MAX_LOGIN_ATTEMPTS) {
                     accounts[i].isLocked = 1;
                     printf("Too many incorrect login attempts. This account is now locked.\n");
                     writeAccountFile(accounts, numAccounts);
+                	waitForClear();
+                	return;
                 }
-                return;
+                waitForClear();
+                printf("Nhap lai\n");
+                scanf("%s", password);
+			}
+			*reloadUser=0;	
+            accounts[i].loginAttempts = 0; // Reset so lan dang nhap sai
+            printf("Logged in successfully.\n");
+            printf("Your balance: %.2f\n", accounts[i].balance);
+            printf("Enter amount to deposit: ");
+            scanf("%f", &amount);
+            if (amount > 0) {
+                accounts[i].balance += amount;
+                printf("Deposit successful. New balance: %.2f\n", accounts[i].balance);
+                writeAccountFile(accounts, numAccounts);
+                
+                printf("Nhan Enter de ket thuc giao dich");
+    			while (getchar() != '\n');
+    			getchar();
+    			system("cls");
+    			
+                // Ghi lich su giao dich
+                strcpy(transactions[num_transactions].account_number, accounts[i].username);
+				strcpy(transactions[num_transactions].type, "Deposit");
+				transactions[num_transactions].amount = amount;
+				num_transactions++;	
+            } else {
+                printf("Invalid amount.\n");
             }
+            break;			
         }
-    }
-    if (!loggedIn) {
-        printf("Invalid username.\n");
     }
 }
 
-void withdraw(Account *accounts, int numAccounts) {
+void withdraw(Account *accounts, int numAccounts, int *reloadUser) {
     float amount;
     int loggedIn = 0;
 
+	for (int i = 0; i < numAccounts; i++) {
+        if (strcmp(username, accounts[i].username) == 0) {
+            if (accounts[i].isLocked) {
+                printf("This account is locked. Please contact customer support.\n");
+                return;
+            }
+            if(*reloadUser){
+            	printf("Enter password: ");
+            	scanf("%s", password);
+			}
 
-    printf("Enter password: ");
-    scanf("%s", password);
-    for (int i = 0; i < numAccounts; i++) {
-            if (strcmp(password, accounts[i].password) == 0) {
-                loggedIn = 1;
-                accounts[i].loginAttempts = 0; // Reset s? l?n ðãng nh?p sai
-                printf("Logged in successfully.\n");
-                printf("Your balance: %.2f\n", accounts[i].balance);
-                printf("Enter amount to withdraw: ");
-                scanf("%f", &amount);
-                if (amount > 0 && amount <= accounts[i].balance) {
-                    accounts[i].balance -= amount;
-                    printf("Withdrawal successful. New balance: %.2f\n", accounts[i].balance);
-                    writeAccountFile(accounts, numAccounts);
-                    // Ghi l?i l?ch s? giao d?ch
-                    strcpy(transactions[num_transactions].account_number, accounts[i].username);
-					strcpy(transactions[num_transactions].type, "Withdraw");
-				    transactions[num_transactions].amount = amount;
-				    num_transactions++;	
-                } else {
-                    printf("Invalid amount or insufficient balance.\n");
-                }
-                break;
-            } else {
-                printf("Incorrect password.\n");
+			while(strcmp(password, accounts[i].password)){
+				printf("Incorrect password.\n");
                 accounts[i].loginAttempts++;
                 if (accounts[i].loginAttempts >= MAX_LOGIN_ATTEMPTS) {
                     accounts[i].isLocked = 1;
                     printf("Too many incorrect login attempts. This account is now locked.\n");
                     writeAccountFile(accounts, numAccounts);
+                	waitForClear();
+                	return;
                 }
-                return;
-            
-        	}
-	}
-//    if (!loggedIn) {
-//        printf("Invalid username.\n");
-//    }
+                waitForClear();
+                printf("Nhap lai\n");
+                scanf("%s", password);
+			}
+            loggedIn = 1;
+            *reloadUser=0;
+            accounts[i].loginAttempts = 0; // Reset s? l?n ðãng nh?p sai
+            printf("Logged in successfully.\n");
+            printf("Your balance: %.2f\n", accounts[i].balance);
+            printf("Enter amount to withdraw: ");
+            scanf("%f", &amount);
+            if (amount > 0 && amount <= accounts[i].balance) {
+                accounts[i].balance -= amount;
+                printf("Withdrawal successful. New balance: %.2f\n", accounts[i].balance);
+                writeAccountFile(accounts, numAccounts);
+                printf("Nhan Enter de ket thuc giao dich");
+    			while (getchar() != '\n');
+    			getchar();
+    			system("cls");
+                
+                // Ghi l?i l?ch s? giao d?ch
+                strcpy(transactions[num_transactions].account_number, accounts[i].username);
+				strcpy(transactions[num_transactions].type, "Withdraw");
+				transactions[num_transactions].amount = amount;
+				num_transactions++;	
+            } else {
+                printf("Invalid amount or insufficient balance.\n");
+            }
+            break;			
+        }
+    }
 }
 
-void checkBalance(Account *accounts, int numAccounts) {
+void checkBalance(Account *accounts, int numAccounts,int *reloadUser) {
     int loggedIn = 0;
 
     for (int i = 0; i < numAccounts; i++) {
-        
-            printf("Enter password: ");
-            scanf("%s", password);
+        if (strcmp(username, accounts[i].username) == 0) {
+            if (accounts[i].isLocked) {
+                printf("This account is locked. Please contact customer support.\n");
+                return;
+            }
+            if(*reloadUser){
+            	printf("Enter password: ");
+            	scanf("%s", password);
+			}
 
-            if (strcmp(password, accounts[i].password) == 0) {
-                loggedIn = 1;
-                accounts[i].loginAttempts = 0; // Reset s? l?n ðãng nh?p sai
-                printf("Logged in successfully.\n");
-                printf("Current balance for %s: %.2f\n", username, accounts[i].balance);
-                strcpy(transactions[num_transactions].account_number, accounts[i].username);
-					strcpy(transactions[num_transactions].type, "checkBlance");
-				    transactions[num_transactions].amount = 0;
-				    num_transactions++;	
-                break;
-            } else {
-                printf("Incorrect password.\n");
+			while(strcmp(password, accounts[i].password)){
+				printf("Incorrect password.\n");
                 accounts[i].loginAttempts++;
                 if (accounts[i].loginAttempts >= MAX_LOGIN_ATTEMPTS) {
                     accounts[i].isLocked = 1;
                     printf("Too many incorrect login attempts. This account is now locked.\n");
                     writeAccountFile(accounts, numAccounts);
+                	return;
                 }
-                return;
-            }
-        
-    }
-//    if (!loggedIn) {
-//        printf("Invalid username.\n");
-//    }
-}
-
-void showMenuAndProcessChoice(Account *accounts, int numAccounts) {
-    int choice;
-    int i=check_password(accounts);
-    if(start==2) return;
-    while(!i){
-    	i=check_password(accounts);
-    	printf("%d",i);
-	}
-    do {
-        printf("\nATM Menu:\n");
-        printf("1. Perform Transaction\n");
-        printf("2. Exit\n");
-        printf("Enter your choice: ");
-        scanf("%d", &choice);
-
-        switch(choice) {
-            case 1:
-                performTransaction(accounts, numAccounts);
-                break;
-            case 2:
-                printf("Exiting...\n");
-                break;
-            default:
-                printf("Invalid choice. Please try again.\n");
+                waitForClear();
+                printf("Nhap lai\n");
+                scanf("%s", password);
+			}
+            loggedIn = 1;
+            *reloadUser = 0;
+            accounts[i].loginAttempts = 0; // Reset s? l?n ðãng nh?p sai
+            printf("Logged in successfully.\n");
+            printf("Current balance for %s: %.2f\n", username, accounts[i].balance);
+            strcpy(transactions[num_transactions].account_number, accounts[i].username);
+				strcpy(transactions[num_transactions].type, "checkBlance");
+				transactions[num_transactions].amount = 0;
+				num_transactions++;	
+				
+			printf("Nhan Enter de ket thuc giao dich");
+    		while (getchar() != '\n');
+    		getchar();
+    		system("cls");
+    		
+            break;			
         }
-    } while(choice != 2);
+    }
+    
 }
 
-void logTransaction(char *username, char *action, float amount) {
-    FILE *file = fopen("transaction_log.dat", "a");
+
+void save_transactions(const char *filename) {
+    FILE *file = fopen(filename, "w");
     if (file == NULL) {
-        printf("Cannot open transaction log file.\n");
-        return;
+        perror("Error opening file");
+        exit(EXIT_FAILURE);
     }
-    fprintf(file, "[%s] %s %.2f\n", username, action, amount);
+
+    int i;
+    for (i = 0; i < num_transactions; i++) {
+        fprintf(file, "%s %.2f %s\n", transactions[i].account_number, transactions[i].amount,transactions[i].type);
+    }
+
     fclose(file);
 }
 
