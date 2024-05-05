@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+	
 
 #ifdef _WIN32
 #include <windows.h> // Ðoi voi Windows
@@ -11,6 +13,8 @@
 #define MAX_ACCOUNTS 100
 #define MAX_LOGIN_ATTEMPTS 5
 #define MAX_TRANSACTIONS 10 // Gi?i h?n s? l?n giao d?ch
+#define FILENAME_SIZE 150 
+
 int start = 0;
 char account_ad[] = "admin";
 char password_ad[] = "0000";
@@ -40,7 +44,8 @@ Transaction transactions[MAX_TRANSACTIONS];
 int num_transactions = 0;
 int numAccounts = 0;
 
-
+void title();
+void main_bgr();
 void waitForClear();
 void enterPassword(char *password);
 int checkPassword_admin();
@@ -52,22 +57,54 @@ void deposit(Account *accounts, int numAccounts,int *reloadUser);
 void withdraw(Account *accounts, int numAccounts,int *reloadUser);
 void checkBalance(Account *accounts, int numAccounts,int *reloadUser);
 void showMenuAndProcessChoice(Account *accounts, int numAccounts);
-void save_transactions(const char *filename);
+void save_transactions();
 
 int main() {
     Account accounts[MAX_ACCOUNTS];
 	
+	title();
     // Nh?p m?t kh?u t? nhân viên IT ð? kh?i ð?ng máy ATM
 	checkPassword_admin();
     // Doc file
     readAccountFile(accounts, &numAccounts);
+//    	printf("%d",start);
 
     while(start!=2){
     	showMenuAndProcessChoice(accounts, numAccounts);
 	}
   
-	save_transactions("transaction_history.dat");
+	save_transactions();
     return 0;
+}
+
+
+
+//Giao dien ban dau
+void title() {
+    printf(" +----------------------------------------------------------------------------------------------------------+\n");
+    printf(" '                                             DE TAI DO AN PBL1                                            '\n");
+    printf(" '                          DE TAI 701: XAY DUNG UNG DUNG THUC HIEN GIAO DICH TREN ATM                      '\n");
+	printf(" '                                                                                                          '\n");
+    printf(" '                                  Giang Vien Huong Dan:   Tran Ho Thuy Tien                               '\n");
+    printf(" '                                  Sinh Vien Thuc Hien :   Huynh Thao Nhi                                  '\n");
+    printf(" '                                                          Nguyen Thi Trang                        	    '\n");
+    printf(" +----------------------------------------------------------------------------------------------------------+\n");
+    printf("\n");
+    printf(" *----------------------------------------------------------------------------------------------------------*\n");
+    printf(" |                                                                                                          |\n");
+    printf(" '                                          WELCOME TO OUR ATM                                              '\n");
+    printf(" |                                                                                                          |\n");
+    printf(" *----------------------------------------------------------------------------------------------------------*\n");
+    printf("\n\n");  
+}
+
+void main_bgr(){
+	printf(" *----------------------------------------------------------------------------------------------------------*\n");
+    printf(" |                                                                                                          |\n");
+    printf(" '                                          WELCOME TO OUR ATM                                              '\n");
+    printf(" |                                                                                                          |\n");
+    printf(" *----------------------------------------------------------------------------------------------------------*\n");
+    printf("\n\n"); 
 }
 
 //Ham cho xoa man hinh
@@ -94,19 +131,38 @@ void enterPassword() {
 
 int checkPassword_admin() {
     //Ham xac nhan admin
-    printf("Nhap mat khau de khoi dong may\n");
-	enterPassword();
+    printf(" *----------------------------------------------------------------------------------------------------------*\n");
+	printf(" |                                                                                                          |\n");
+    printf(" '                                    NHAP MAT KHAU DE KHOI DONG MAY                                        '\n");
+    printf(" '                                    ENTER IT PASSWORD TO START ATM                                        '\n");
+    printf(" |                                                                                                          |\n");
+    printf(" *----------------------------------------------------------------------------------------------------------*\n");
+    printf("             _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _           \n\n");
+    printf("                                              Password:");
+	scanf("%s", &password);
     
     while(strcmp(password, password_ad)){
     	system("cls");
-    	printf("MAT KHAU NHAP VAO SAI!!!\n Vui long nhap lai\n\n\n");
+
+		printf("                                    *- - - - - - - - - - - -  - - - - - - - - - - -* \n");
+		printf("                                    |                                              |\n");
+	    printf("                                    *  MAT KHAU NHAP VAO SAI!!!Vui long nhap lai.  *\n");
+	    printf("                                    *  INCORRECT PASSWORD!!! Please re-enter       *\n");
+	    printf("                                    |                                              |\n");
+    	printf("                                    *- - - - - - - - - - - -  - - - - - - - - - - -* \n");
+
     	waitForClear();
 		enterPassword();
 	}
 	++start;
 	system("cls");
-	printf("Dang khoi dong");
-	waitForClear();
+		printf("                                    *- - - - - - - - - - - -  - - - - - - - - - - -* \n");
+		printf("                                    |                                              |\n");
+	    printf("                                    *  MAT KHAU NHAP VAO DUNG!!! Dang khoi dong... *\n");
+	    printf("                                    *       CORRECT PASSWORD!!! Starting...        *\n");
+	    printf("                                    |                                              |\n");
+    	printf("                                    *- - - - - - - - - - - -  - - - - - - - - - - -* \n");
+//	waitForClear();  
 }
 
 void readAccountFile(Account *accounts, int *numAccounts) {
@@ -136,8 +192,7 @@ void writeAccountFile(Account *accounts, int numAccounts) {
 
 // Hàm de kiem tra mat khau
 int check_password(Account *accounts) {
-	printf("***     ---     Chao mung ban     ---     ***\n\n\nVui long xac nhan thong tin tai khoan\n\n");
-	enterAccount();
+	main_bgr();
 	if (strcmp(username, password_ad) == 0){
 		++start;
 		return 0;
@@ -169,10 +224,13 @@ void showMenuAndProcessChoice(Account *accounts, int numAccounts) {
 	int *reloadUser;
 	*reloadUser = 1; 
     int choice;
+    
+    enterAccount();
     int i=check_password(accounts);
+    
     if(start==2) return;
     while(!i){
-    	system("cls");
+//    	system("cls");
     	printf("THONG TIN TAI KHOAN SAI!!!\nVui long nhap lai");
     	waitForClear();
     	i=check_password(accounts);
@@ -188,11 +246,11 @@ void showMenuAndProcessChoice(Account *accounts, int numAccounts) {
 
         switch(choice) {
             case 1:
-            	system("cls");
+//            	system("cls");
                 performTransaction(accounts, numAccounts,reloadUser);
                 break;
             case 0:
-                system("cls");
+//                system("cls");
                 printf("Exiting...\n");
                 waitForClear();
                 void waitForClear();
@@ -205,29 +263,31 @@ void showMenuAndProcessChoice(Account *accounts, int numAccounts) {
 
 void performTransaction(Account *accounts, int numAccounts,int *reloadUser) {
     int choice;
-    printf("\nTransaction Menu:\n");
+    printf("\n***                ---             Transaction Menu            ---               ***\n\n");
     printf("1. Withdraw\n");
     printf("2. Deposit\n");
     printf("3. Check Balance\n");
     printf("0. Back to Main Menu\n");
+    
+    printf("\n");
     printf("Enter your choice: ");
     scanf("%d", &choice);
 
     switch(choice) {
         case 1:
-        	system("cls");
+//        	system("cls");
             withdraw(accounts, numAccounts,reloadUser);
             break;
         case 2:
-        	system("cls");
+//        	system("cls");
             deposit(accounts, numAccounts,reloadUser);
             break;
         case 3:
-        	system("cls");
+//        	system("cls");
             checkBalance(accounts, numAccounts, reloadUser);
             break;
         case 0:
-        	system("cls");
+//        	system("cls");
             printf("Returning to Main Menu...\n");
             waitForClear();
             return;
@@ -327,7 +387,7 @@ void deposit(Account *accounts, int numAccounts, int *reloadUser) {
                 printf("Nhan Enter de ket thuc giao dich");
     			while (getchar() != '\n');
     			getchar();
-    			system("cls");
+//    			system("cls");
     			
                 // Ghi lich su giao dich
                 strcpy(transactions[num_transactions].account_number, accounts[i].username);
@@ -385,7 +445,7 @@ void withdraw(Account *accounts, int numAccounts, int *reloadUser) {
                 printf("Nhan Enter de ket thuc giao dich");
     			while (getchar() != '\n');
     			getchar();
-    			system("cls");
+//    			system("cls");
                 
                 // Ghi l?i l?ch s? giao d?ch
                 strcpy(transactions[num_transactions].account_number, accounts[i].username);
@@ -440,7 +500,7 @@ void checkBalance(Account *accounts, int numAccounts,int *reloadUser) {
 			printf("Nhan Enter de ket thuc giao dich");
     		while (getchar() != '\n');
     		getchar();
-    		system("cls");
+//    		system("cls");
     		
             break;			
         }
@@ -449,18 +509,54 @@ void checkBalance(Account *accounts, int numAccounts,int *reloadUser) {
 }
 
 
-void save_transactions(const char *filename) {
+//void save_transactions(const char *filename) {
+//    FILE *file = fopen(filename, "w");
+//    if (file == NULL) {
+//        perror("Error opening file");
+//        exit(EXIT_FAILURE);
+//    }
+//
+//    int i;
+//    for (i = 0; i < num_transactions; i++) {
+//        fprintf(file, "%s %.2f %s\n", transactions[i].account_number, transactions[i].amount,transactions[i].type);
+//    }
+//
+//    fclose(file);
+//}
+
+void save_transactions() {
+    char filename[FILENAME_SIZE];
+    char full_path[FILENAME_SIZE];
+
+    time_t rawtime;
+    struct tm *timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    // YYYY-MM-DD.txt
+    strftime(filename, sizeof(filename), "_%Y-%m-%d_.txt", timeinfo);
+
+    // link from folder_path,filename
+//    snprintf(full_path, sizeof(full_path), "%s/%s", folder_path, filename);
+
+    // new file
     FILE *file = fopen(filename, "w");
-    if (file == NULL) {
+    if (file != NULL) {
+        int i;
+    	for (i = 0; i < num_transactions; i++) {
+        	fprintf(file, "%s %.2f %s\n", transactions[i].account_number, transactions[i].amount,transactions[i].type);
+    	}
+        fclose(file);
+        printf("END _%Y-%m-%d_\n", timeinfo);
+    } else {
         perror("Error opening file");
         exit(EXIT_FAILURE);
     }
-
-    int i;
-    for (i = 0; i < num_transactions; i++) {
-        fprintf(file, "%s %.2f %s\n", transactions[i].account_number, transactions[i].amount,transactions[i].type);
-    }
-
-    fclose(file);
 }
+
+
+
+
+
+
 
